@@ -3,3 +3,8 @@
 *.dll
 *.so
 *.dylib
+
+# Runtime data and output
+data.txt
+*.log
+valid_cpanels.txt
