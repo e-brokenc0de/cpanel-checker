@@ -101,8 +101,18 @@ func (w *Writer) printResult(msg worker.ResultMsg) {
 }
 
 func (w *Writer) saveValid(msg worker.ResultMsg) {
-	// Format: URL:username:password (one per line)
+	// Format: URL:username:password (one per line).
+	// Flush + Sync after every valid hit so results survive crashes / Ctrl+C
+	// and are visible when the user tails the file mid-run. Valids are rare
+	// relative to failures, so the per-hit syscall cost is negligible.
 	fmt.Fprintf(w.bufWriter, "%s:%s:%s\n", msg.Cred.RawURL, msg.Cred.Username, msg.Cred.Password)
+	if err := w.bufWriter.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "\nwarning: flush valid result: %v\n", err)
+		return
+	}
+	if err := w.file.Sync(); err != nil {
+		fmt.Fprintf(os.Stderr, "\nwarning: sync valid result: %v\n", err)
+	}
 }
 
 func (w *Writer) printSummary() {
